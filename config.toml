@@ -1,0 +1,7 @@
+# .streamlit/config.toml
+[theme]
+primaryColor = "#8B0000"  # Bordure de couleur rouge foncé
+backgroundColor = "#000000"  # Fond noir
+secondaryBackgroundColor = "#8B0000"  # Seconde couleur de fond (rouge foncé)
+textColor = "#FFFFFF"  # Texte blanc
+font = "sans serif"  # Police sans-serif
