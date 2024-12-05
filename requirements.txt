@@ -1,6 +1,2 @@
-streamlit
-base64
-pathlib
-random
-requests
-re
+streamlit==1.25.0
+requests==2.31.0
