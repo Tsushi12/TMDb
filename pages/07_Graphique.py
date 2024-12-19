@@ -65,13 +65,13 @@ def plot_graphs(df):
     fig, ax = plt.subplots(figsize=(10, 6))
     
     # Courbe des budgets
-    ax.plot(df['year'], df['budget'], label='Budget', color='blue', marker='o', linestyle='-', markersize=5)
+    ax.plot(df['year'], df['avg_budget'], label='Budget Moyen', color='blue', marker='o', linestyle='-', markersize=5)
     
     # Courbe des revenus
-    ax.plot(df['year'], df['revenue'], label='Revenue', color='green', marker='o', linestyle='-', markersize=5)
+    ax.plot(df['year'], df['avg_revenue'], label='Revenu Moyen', color='green', marker='o', linestyle='-', markersize=5)
 
     # Ajouter des labels et un titre
-    ax.set_title('Budget et Revenus des Films MCU', fontsize=16)
+    ax.set_title('Budget et Revenus Moyens des Films MCU', fontsize=16)
     ax.set_xlabel('Année', fontsize=12)
     ax.set_ylabel('Montant (en $)', fontsize=12)
     ax.legend()
