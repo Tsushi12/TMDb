@@ -1,12 +1,11 @@
 import requests
-import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 
-# API Key de TMDB
-API_KEY = "6a2a705c0c740a478c412dedfbd387c5"
+# Clé API pour accéder à l'API The Movie Database (TMDb)
+api_key = '6a2a705c0c740a478c412dedfbd387c5'
 
-# Liste des films du MCU
+# Liste des films sélectionnés
 selected_movies = [
     "Iron Man", "The Incredible Hulk", "Iron Man 2", "Thor", 
     "Captain America: The First Avenger", "The Avengers",
@@ -23,100 +22,47 @@ selected_movies = [
     "The Marvels", "Deadpool & Wolverine"
 ]
 
-def fetch_movie_details(title):
-    """Récupérer les détails d'un film à partir de l'API TMDB."""
-    url = f"https://api.themoviedb.org/3/search/movie?api_key={API_KEY}&query={title}"
-    response = requests.get(url)
+# Fonction pour rechercher l'ID d'un film en utilisant son titre
+def search_movie_id(movie_title):
+    search_url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={movie_title}"
+    response = requests.get(search_url)
     data = response.json()
-
     if data['results']:
-        movie_id = data['results'][0]['id']
-        details_url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={API_KEY}"
-        details_response = requests.get(details_url)
-        details = details_response.json()
+        return data['results'][0]['id']
+    return None
 
-        return {
-            "title": details.get('title', "N/A"),
-            "release_date": details.get('release_date', "N/A"),
-            "budget": details.get('budget', 0),
-            "revenue": details.get('revenue', 0)
-        }
-    else:
-        return {
-            "title": title,
-            "release_date": "Not Found",
-            "budget": "N/A",
-            "revenue": "N/A"
-        }
+# Fonction pour obtenir les informations financières d'un film
+def get_movie_financials(movie_id):
+    financial_url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=en-US"
+    response = requests.get(financial_url)
+    data = response.json()
+    revenue = data.get('revenue', 0)
+    budget = data.get('budget', 0)
+    return revenue, budget
 
-def calculate_average_budget_revenue(df):
-    """Calculer les moyennes du budget et des revenus par année."""
-    df['year'] = pd.to_datetime(df['release_date'], errors='coerce').dt.year
-    yearly_stats = df.groupby('year').agg(
-        avg_budget=('budget', 'mean'),
-        avg_revenue=('revenue', 'mean')
-    ).reset_index()
-    
-    return yearly_stats
+# Liste pour stocker les recettes et les coûts
+revenues = []
+budgets = []
+movie_titles = []
 
-def plot_graphs(df):
-    """Tracer les graphiques des budgets et revenus du MCU."""
-    # Tracer les courbes des budgets et des revenus
-    fig, ax = plt.subplots(figsize=(10, 6))
-    
-    # Courbe des budgets
-    ax.plot(df['year'], df['avg_budget'], label='Budget Moyen', color='blue', marker='o', linestyle='-', markersize=5)
-    
-    # Courbe des revenus
-    ax.plot(df['year'], df['avg_revenue'], label='Revenu Moyen', color='green', marker='o', linestyle='-', markersize=5)
+# Récupérer les informations pour chaque film
+for movie in selected_movies:
+    movie_id = search_movie_id(movie)
+    if movie_id:
+        revenue, budget = get_movie_financials(movie_id)
+        revenues.append(revenue)
+        budgets.append(budget)
+        movie_titles.append(movie)
 
-    # Ajouter des labels et un titre
-    ax.set_title('Budget et Revenus Moyens des Films MCU', fontsize=16)
-    ax.set_xlabel('Année', fontsize=12)
-    ax.set_ylabel('Montant (en $)', fontsize=12)
-    ax.legend()
+# Créer le graphique
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(movie_titles, revenues, label="Recettes", color="green", marker='o')
+ax.plot(movie_titles, budgets, label="Coûts", color="red", marker='x')
+ax.set_xticklabels(movie_titles, rotation=90)
+ax.set_xlabel("Films")
+ax.set_ylabel("Montant en dollars")
+ax.set_title("Recettes et Coûts des Films Marvel")
+ax.legend()
 
-    # Afficher le graphique
-    st.pyplot(fig)
-
-def display_data():
-    """Afficher les films et leurs données dans Streamlit."""
-    st.title("Marvel Cinematic Universe (MCU) Movies")
-
-    # Tableau pour stocker les informations sur les films
-    movie_data = []
-
-    for title in selected_movies:
-        details = fetch_movie_details(title)
-
-        # Calculer le seuil comme 3 * budget
-        budget = details['budget']
-        revenue = details['revenue']
-        seuil = budget * 3 if isinstance(budget, (int, float)) else "N/A"
-        rentabilite = revenue - budget if isinstance(revenue, (int, float)) else "N/A"
-
-        # Ajouter la ligne au tableau
-        movie_data.append([
-            details['title'], details['release_date'], budget, revenue, seuil, rentabilite
-        ])
-
-    # Créer un DataFrame pandas pour afficher dans Streamlit
-    df = pd.DataFrame(movie_data, columns=["Titre", "Date", "Budget", "Revenue", "Seuil", "Rentabilité"])
-
-    # Afficher le tableau des films
-    st.subheader("Détails des films MCU")
-    st.dataframe(df)
-
-    # Calculer les moyennes par année
-    averages_df = calculate_average_budget_revenue(df)
-
-    # Afficher les moyennes
-    st.subheader("Moyennes par année")
-    st.dataframe(averages_df)
-
-    # Afficher le graphique des budgets et des revenus
-    plot_graphs(averages_df)
-
-# Exécuter l'application Streamlit
-if __name__ == "__main__":
-    display_data()
+# Afficher le graphique avec Streamlit
+st.pyplot(fig)
